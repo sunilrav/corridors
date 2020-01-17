@@ -2,12 +2,12 @@
 
 namespace CorridorsOfTime.Models
 {
-    public class Root
+    public class Hexagon
     {
         public string Name { get; set; }
         public string Value { get; set; }
         public List<Node> Nodes { get; set; }
-        public bool IsEdge { get; set; }        
+        public bool IsEdge { get; set; }
     }
 
     public class Node
