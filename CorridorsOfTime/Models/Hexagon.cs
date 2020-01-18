@@ -8,6 +8,8 @@ namespace CorridorsOfTime.Models
         public string Value { get; set; }
         public List<Node> Nodes { get; set; }
         public bool IsEdge { get; set; }
+
+        public List<Hexagon> ConnectedTo { get; set; }
     }
 
     public class Node

@@ -1,5 +1,4 @@
 ﻿using CorridorsOfTime.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,59 +11,49 @@ namespace CorridorsOfTime
         {
             var patterns = PatternJsons.Get();
 
-            var hexagons = FormatHexagons(patterns);
+            var hexagons = Formatter.FormatHexagons(patterns);
+            //DisplayGrid(hexagons);
 
-            var edgeHexagons = GetEdgeRoots(hexagons);
+            Mapper.Build(hexagons);
+            //DisplayConnections(hexagons);
 
-            Display(hexagons);
-
-            BuildPath(hexagons, edgeHexagons);
-
-            
+            var edgeHexagons = hexagons.Where(x => x.IsEdge).ToList();
+            DisplayPath(edgeHexagons[0]);
 
             Console.ReadLine();            
         }
 
-        private static List<Hexagon> FormatHexagons(List<string> jsons)
+        private static void DisplayPath(Hexagon start)
         {
-            var count = 1;
-            var hexagons = new List<Hexagon>();
-            foreach (var json in jsons)
+            Console.Write($"{start.Name}[{start.Value}]-->");
+            if (start.ConnectedTo.Count != 0)
             {
-                var pattern = JsonConvert.DeserializeObject<Pattern>(json);
-                var nodes = FormatNodes(pattern);
-                var hexagon = new Hexagon
+                foreach (var connected in start.ConnectedTo)
                 {
-                    Name = $"root{count:000000}",
-                    Value = pattern.Center,
-                    Nodes = nodes,
-                    IsEdge = IsEdgeRoot(nodes)
-                };
-
-                hexagons.Add(hexagon);
-                count++;
+                    DisplayPath(connected);
+                }
             }
-
-            return hexagons;
-        }
-
-        private static List<Node> FormatNodes(Pattern pattern)
-        {
-            return pattern.Nodes.Select((t, i) => FormatNode(t, pattern.Walls[i])).ToList();
-        }
-
-        private static Node FormatNode(List<string> nodesStrList, bool isOpenWall)
-        {
-            var node = new Node
+            else
             {
-                Value = nodesStrList.Aggregate((i, j) => i + j),
-                IsEdgeNode = nodesStrList.All(x => x == nodesStrList.First()),
-                HasOpenWall = !isOpenWall
-            };
-            return node;
+                Console.WriteLine();
+            }
         }
 
-        private static void Display(List<Hexagon> hexagons)
+        private static void DisplayConnections(List<Hexagon> hexagons)
+        {
+            foreach (var hexagon in hexagons)
+            {
+                Console.Write($"{hexagon.Name}[{hexagon.Value}]-->");
+                foreach (var connectedHexagon in hexagon.ConnectedTo)
+                {
+                    Console.Write($"{connectedHexagon.Name}[{connectedHexagon.Value}],");
+                }
+                Console.WriteLine();
+                Console.ResetColor();
+            }
+        }
+
+        private static void DisplayGrid(List<Hexagon> hexagons)
         {
             foreach (var hexagon in hexagons)
             {
@@ -88,63 +77,6 @@ namespace CorridorsOfTime
             }
         }
 
-        private static bool IsEdgeRoot(List<Node> nodes)
-        {
-            return nodes.Any(node => node.IsEdgeNode && node.HasOpenWall);
-        }
-
-        private static List<Hexagon> GetEdgeRoots(List<Hexagon> roots)
-        {
-            return roots.Where(x => x.IsEdge).ToList();
-        }
-
-        private static void BuildPath(List<Hexagon> hexagons, List<Hexagon> edgeRoots)
-        {
-            var path = new List<Hexagon>();
-
-            var head = edgeRoots[0];
-            path.Add(head);
-
-            foreach (var hexagon in hexagons)
-            {
-                if(head == hexagon || !path.Any(x => x.Value == head.Value))
-                    continue;
-                    
-                var connected = IsConnected(head, hexagon);
-                if (connected)
-                {
-                    Console.WriteLine($"Connected: {head.Name} to {hexagon.Name}");
-                    head = hexagon;
-
-                    path.Add(head);
-                }
-                Console.WriteLine();
-            }
-          
-        }
-
-        private static bool IsConnected(Hexagon headHexagon, Hexagon regularHexagon)
-        {
-            Console.WriteLine($"Comparing {headHexagon.Name} and {regularHexagon.Name}");
-            foreach (var headHexagonNode in headHexagon.Nodes)
-            {
-                foreach (var regularHexagonNode in regularHexagon.Nodes)
-                {
-                    if (headHexagonNode.Value == "BBBBBBB" || regularHexagonNode.Value == "BBBBBBB")
-                    {
-                        return false;
-                    }
-                    if ((headHexagonNode.Value == regularHexagonNode.Value)
-                                        && headHexagonNode.HasOpenWall 
-                                        && regularHexagonNode.HasOpenWall)
-                    {
-                        Console.WriteLine($"Head: {headHexagonNode.Value}, Tail:{regularHexagonNode.Value}");
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+        
     }
 }
